@@ -17,18 +17,23 @@ module Simpler
 
     def route_for(env)
       method = env['REQUEST_METHOD'].downcase.to_sym
-      path = env['PATH_INFO']
+      path   = env['PATH_INFO']
+      current_route = @routes.find { |route| route.match?(method, path) }
+      env['action_params'] = current_route.params unless current_route.nil?
+      current_route
+    end
 
-      @routes.find { |route| route.match?(method, path) }
+    def default_route(path)
+      Route.new(:get, path, controller_from_string('defaults'), 'not_found')
     end
 
     private
 
     def add_route(method, path, route_point)
       route_point = route_point.split('#')
-      controller = controller_from_string(route_point[0])
-      action = route_point[1]
-      route = Route.new(method, path, controller, action)
+      controller  = controller_from_string(route_point[0])
+      action      = route_point[1]
+      route       = Route.new(method, path, controller, action)
 
       @routes.push(route)
     end

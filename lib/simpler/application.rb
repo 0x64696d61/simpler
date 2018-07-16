@@ -1,6 +1,7 @@
 require 'yaml'
 require 'singleton'
 require 'sequel'
+require 'byebug'
 require_relative 'router'
 require_relative 'controller'
 
@@ -13,7 +14,7 @@ module Simpler
 
     def initialize
       @router = Router.new
-      @db = nil
+      @db     = nil
     end
 
     def bootstrap!
@@ -28,8 +29,10 @@ module Simpler
 
     def call(env)
       route = @router.route_for(env)
+      route = @router.default_route(env['PATH_INFO']) if route.nil?
+
       controller = route.controller.new(env)
-      action = route.action
+      action     = route.action
 
       make_response(controller, action)
     end
@@ -45,9 +48,9 @@ module Simpler
     end
 
     def setup_database
-      database_config = YAML.load_file(Simpler.root.join('config/database.yml'))
+      database_config             = YAML.load_file(Simpler.root.join('config/database.yml'))
       database_config['database'] = Simpler.root.join(database_config['database'])
-      @db = Sequel.connect(database_config)
+      @db                         = Sequel.connect(database_config)
     end
 
     def make_response(controller, action)
